@@ -10,6 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class ProjectForm
@@ -44,7 +45,10 @@ class ProjectForm
                             ->options(array_combine(Project::STATUSES, array_map('ucfirst', Project::STATUSES)))
                             ->default('completed')
                             ->required(),
-                        DatePicker::make('start_date'),
+                        DatePicker::make('start_date')
+                            // The website lists projects newest first, so a published project needs a date.
+                            ->required(fn (Get $get): bool => (bool) $get('is_published'))
+                            ->helperText('Needed to publish: the website lists projects newest first.'),
                         DatePicker::make('end_date')
                             ->afterOrEqual('start_date'),
                         Textarea::make('summary')

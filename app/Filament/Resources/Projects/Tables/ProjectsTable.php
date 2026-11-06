@@ -18,7 +18,9 @@ class ProjectsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort(fn (Builder $query): Builder => $query->latestFirst())
+            // Newest added on top, so a project you just created is easy to find.
+            // Click "Years" to see the order used on the website.
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('title')
                     ->searchable()
@@ -30,7 +32,13 @@ class ProjectsTable
                     ->wrap(),
                 TextColumn::make('years')
                     ->label('Years')
-                    ->state(fn (Project $record): string => self::years($record)),
+                    ->state(fn (Project $record): ?string => self::years($record))
+                    ->placeholder('No date')
+                    ->color(fn (Project $record): ?string => $record->start_date || $record->end_date ? null : 'warning')
+                    // Same order as the website: by the year the work ended (or started).
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderByRaw(
+                        'COALESCE(end_date, start_date) '.($direction === 'asc' ? 'ASC' : 'DESC').' NULLS LAST'
+                    )),
                 TextColumn::make('images_count')
                     ->label('Photos')
                     ->counts('images')
@@ -40,6 +48,11 @@ class ProjectsTable
                     ->label('Published'),
                 ToggleColumn::make('is_featured')
                     ->label('Featured'),
+                TextColumn::make('created_at')
+                    ->label('Added')
+                    ->since()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->since()
                     ->sortable()
@@ -67,15 +80,15 @@ class ProjectsTable
             ]);
     }
 
-    /** "2018–2024", "2022" or "" */
-    private static function years(Project $record): string
+    /** "2018–2024", "2022" or null when the project has no dates */
+    private static function years(Project $record): ?string
     {
         $start = $record->start_date?->year;
         $end = $record->end_date?->year;
 
         return match (true) {
             $start && $end && $start !== $end => "{$start}–{$end}",
-            default                           => (string) ($start ?? $end ?? ''),
+            default                           => ($start ?? $end) ? (string) ($start ?? $end) : null,
         };
     }
 }

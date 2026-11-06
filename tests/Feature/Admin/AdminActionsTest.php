@@ -6,6 +6,7 @@ use App\Filament\Resources\CompanyInfos\Pages\EditCompanyInfo;
 use App\Filament\Resources\Inquiries\Pages\ManageInquiries;
 use App\Filament\Resources\Projects\Pages\CreateProject;
 use App\Filament\Resources\Projects\Pages\EditProject;
+use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\RelationManagers\ImagesRelationManager;
 use App\Models\Client;
 use App\Models\CompanyInfo;
@@ -47,6 +48,7 @@ class AdminActionsTest extends TestCase
                 'client_id'    => $client->id,
                 'services'     => [$service->id],
                 'status'       => 'ongoing',
+                'start_date'   => '2026-03-01',
                 'is_published' => true,
             ])
             ->call('create')
@@ -91,6 +93,45 @@ class AdminActionsTest extends TestCase
         Storage::disk('public')->assertExists($photo->image_url);
         $this->assertStringStartsWith('projects/', $photo->image_url);
         $this->assertGreaterThan($project->images()->where('image_url', 'projects/existing.jpg')->value('sort_order'), $photo->sort_order);
+    }
+
+    public function test_a_project_cannot_be_published_without_a_start_date(): void
+    {
+        $this->actingAsRole('editor');
+        $client = Client::factory()->create();
+
+        Livewire::test(CreateProject::class)
+            ->fillForm([
+                'title'        => 'Padma Bridge Construction',
+                'slug'         => 'padma-bridge-construction',
+                'client_id'    => $client->id,
+                'status'       => 'completed',
+                'is_published' => true,
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['start_date' => 'required']);
+
+        // A draft (not published) can be saved without dates.
+        Livewire::test(CreateProject::class)
+            ->fillForm([
+                'title'        => 'Padma Bridge Construction',
+                'slug'         => 'padma-bridge-construction',
+                'client_id'    => $client->id,
+                'status'       => 'completed',
+                'is_published' => false,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+    }
+
+    public function test_the_admin_list_shows_the_newest_added_project_first(): void
+    {
+        $this->actingAsRole('editor');
+        $old = Project::factory()->create(['start_date' => '2024-01-01', 'created_at' => now()->subDay()]);
+        $undated = Project::factory()->create(['start_date' => null, 'end_date' => null, 'is_published' => false]);
+
+        Livewire::test(ListProjects::class)
+            ->assertCanSeeTableRecords([$undated, $old], inOrder: true);
     }
 
     public function test_slugs_must_be_unique(): void
