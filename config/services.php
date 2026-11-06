@@ -33,6 +33,16 @@ return [
         'token' => env('INTERNAL_API_TOKEN'),
     ],
 
+    // Spam check on the inquiry form (Cloudflare Turnstile secret key)
+    'turnstile' => [
+        'secret' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
+    // Where inquiry alerts are sent
+    'inquiries' => [
+        'alert_email' => env('INQUIRY_ALERT_EMAIL', 'digitalavenuebd@gmail.com'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

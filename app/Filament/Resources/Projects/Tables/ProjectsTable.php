@@ -32,7 +32,7 @@ class ProjectsTable
                     ->wrap(),
                 TextColumn::make('years')
                     ->label('Years')
-                    ->state(fn (Project $record): ?string => self::years($record))
+                    ->state(fn (Project $record): ?string => $record->yearsLabel())
                     ->placeholder('No date')
                     ->color(fn (Project $record): ?string => $record->start_date || $record->end_date ? null : 'warning')
                     // Same order as the website: by the year the work ended (or started).
@@ -78,17 +78,5 @@ class ProjectsTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
-    }
-
-    /** "2018–2024", "2022" or null when the project has no dates */
-    private static function years(Project $record): ?string
-    {
-        $start = $record->start_date?->year;
-        $end = $record->end_date?->year;
-
-        return match (true) {
-            $start && $end && $start !== $end => "{$start}–{$end}",
-            default                           => ($start ?? $end) ? (string) ($start ?? $end) : null,
-        };
     }
 }

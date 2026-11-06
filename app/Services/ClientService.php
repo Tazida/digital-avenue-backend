@@ -15,6 +15,7 @@ class ClientService
     {
         return Client::query()
             ->when($type, fn (Builder $q) => $q->where('type', $type))
+            ->withCount(['projects' => fn (Builder $q) => $q->where('is_published', true)])
             ->ordered()
             ->get();
     }

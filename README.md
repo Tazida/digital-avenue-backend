@@ -94,6 +94,25 @@ tests/Feature/                   one test file per API area
 
 **Internal API token:** every `/api` call needs the header `X-Internal-Token: <INTERNAL_API_TOKEN>`. Without a token configured, every call is refused.
 
+## API endpoints
+
+Internal API for the SvelteKit site. Base URL `/api/v1.0`; every call needs `X-Internal-Token`.
+Only published content is returned; contract values appear only when `show_value` is on, and certificate numbers and scans never appear.
+
+| Method | Path | Page | Notes |
+|---|---|---|---|
+| GET | `/home` | Home | `stats`, `featured` (up to 6), `services`, `clients` |
+| GET | `/company` | About, Contact, footer | `company` (intro and founder message as paragraphs, mission as points), `offices`, `core_values`, public `certifications` |
+| GET | `/services` | Services | Grouped: `[{key, label, services}]` |
+| GET | `/services/{slug}` | Service page | `description` paragraphs and published `projects` |
+| GET | `/projects` | Projects | Filters: `service` (slug), `client_type` (`un_agency`, `government`, `private`), `featured=1`, `per_page` (max 50), `page`. Returns `data` and `meta` |
+| GET | `/projects/{slug}` | Project page | `scope` lines, `images` gallery, exact dates |
+| GET | `/capabilities` | Capabilities | `equipment` lists with items, `workforce`, `totals` |
+| GET | `/clients` | Clients | Filter: `type` |
+| POST | `/inquiries` | Contact form | `name`, `email`, `phone?`, `company?`, `service?` (slug), `message`, `turnstile_token`, `website` (honeypot, must stay empty). Send the visitor's IP in `X-Visitor-IP`. Limited to 3 a minute and 20 a day per visitor |
+
+Errors: `{ "error": true, "message": ... }` with 401 (token), 404 (not found or unpublished), 422 (validation), 429 (too many inquiries).
+
 ## Production image
 
 ```bash

@@ -6,6 +6,7 @@ use App\Exceptions\DAException;
 use App\Exceptions\NotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 /**
  * One response shape for the whole API:
@@ -36,7 +37,8 @@ trait ApiResponse
 
     /**
      * Runs a controller action and turns service exceptions into API errors:
-     * NotFoundException → 404, other DAException → 409, anything else → 500 (logged).
+     * NotFoundException → 404, other DAException → 409, ValidationException → 422
+     * (rendered in bootstrap/app.php), anything else → 500 (logged).
      */
     protected function handle(callable $action): JsonResponse
     {
@@ -46,6 +48,8 @@ trait ApiResponse
             return $this->error($e->getMessage(), \ResponseCode['Not Found']);
         } catch (DAException $e) {
             return $this->error($e->getMessage(), \ResponseCode['Conflict']);
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return $this->serverError($e);
         }

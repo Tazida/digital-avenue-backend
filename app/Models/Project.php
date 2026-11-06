@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Project extends Model
 {
@@ -61,6 +62,27 @@ class Project extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ProjectImage::class)->orderBy('sort_order');
+    }
+
+    /** First photo of the gallery, used as the card image. */
+    public function coverImage(): HasOne
+    {
+        return $this->hasOne(ProjectImage::class)->ofMany('sort_order', 'min');
+    }
+
+    /** "2018–2024", "2022", or null when the project has no dates. */
+    public function yearsLabel(): ?string
+    {
+        $start = $this->start_date?->year;
+        $end = $this->end_date?->year;
+
+        if ($start && $end && $start !== $end) {
+            return "{$start}–{$end}";
+        }
+
+        $year = $start ?? $end;
+
+        return $year ? (string) $year : null;
     }
 
     public function scopePublished(Builder $query): Builder

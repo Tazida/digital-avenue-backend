@@ -14,8 +14,9 @@ class ClientResource extends JsonResource
             'name' => $this->name,
             'type' => $this->type,
             // Logos (e.g. UN agencies) are only public once the client confirms permission.
-            'logo_url' => $this->show_logo ? $this->logo_url : null,
-            'website'  => $this->website,
+            'logo_url'       => $this->show_logo ? $this->logo_url : null,
+            'website'        => $this->website,
+            'projects_count' => $this->whenCounted('projects'),
         ];
     }
 }
