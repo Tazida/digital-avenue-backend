@@ -54,6 +54,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Prefix of the internal API: /api/{api_version}/...
+    'api_version' => env('API_VERSION', 'v1.0'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -120,7 +123,7 @@ return [
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
-        'store' => env('APP_MAINTENANCE_STORE', 'database'),
+        'store'  => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
 ];

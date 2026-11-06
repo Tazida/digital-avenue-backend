@@ -15,6 +15,7 @@ No PHP or Composer is needed on your machine; they run inside containers.
 
 ```bash
 cp .env.example .env
+# set INTERNAL_API_TOKEN in .env: openssl rand -hex 32
 
 # install PHP dependencies without local PHP
 docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html \
@@ -53,6 +54,45 @@ sail artisan <command>      # artisan
 sail composer <command>     # composer
 sail restart queue          # reload the queue worker after code changes
 ```
+
+## Code structure
+
+Same layering as ParkFu: thin controllers, business logic in services.
+
+```
+app/
+  Constant/ResponseCodes.php     \ResponseCode["Not Found"] etc. (autoloaded in composer.json)
+  Exceptions/                    DAException → 409, NotFoundException → 404
+  Http/Controllers/Api/          thin controllers: request → service → resource
+  Http/Middleware/               EnsureInternalToken (checks X-Internal-Token)
+  Http/Requests/                 form requests; extend ApiRequest
+  Http/Resources/                JSON shape of each model (hides private fields)
+  Models/                        Eloquent models (ULID ids, constants such as TYPES)
+  Services/                      queries and business rules
+  Traits/ApiResponse.php         success(), error(), handle()
+routes/api.php                   internal API under /api/v1.0
+tests/Feature/                   one test file per API area
+```
+
+**Response shape**
+
+```json
+{ "success": true, "data": [ ... ] }
+{ "error": true, "message": "Lot not found." }
+{ "error": true, "message": { "type": ["The selected type is invalid."] } }
+```
+
+**Adding an API area** (see Clients as the example)
+
+1. Migration, model and factory: `sail artisan make:model Project -mf`
+2. `app/Services/ProjectService.php`: queries and rules; throw `NotFoundException` or `DAException`
+3. `app/Http/Requests/...Request.php`: extends `ApiRequest`, only `rules()`
+4. `app/Http/Resources/ProjectResource.php`: never expose private fields (contract values, certificate numbers)
+5. `app/Http/Controllers/Api/ProjectController.php`: `use ApiResponse;` and wrap each action in `$this->handle(...)`
+6. Route in `routes/api.php`
+7. `tests/Feature/ProjectTest.php`, then `sail artisan test`
+
+**Internal API token:** every `/api` call needs the header `X-Internal-Token: <INTERNAL_API_TOKEN>`. Without a token configured, every call is refused.
 
 ## Production image
 
