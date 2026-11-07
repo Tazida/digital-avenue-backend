@@ -9,11 +9,6 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ServiceController;
 use Illuminate\Support\Facades\Route;
 
-/*
- * Internal API for the SvelteKit public site: /api/v1.0/...
- * Every route needs the X-Internal-Token header (see EnsureInternalToken).
- * Only published content is returned; private fields never leave the API.
- */
 Route::prefix(config('app.api_version'))
     ->middleware('internal')
     ->name('api.')
